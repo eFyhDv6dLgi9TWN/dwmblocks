@@ -5,7 +5,6 @@
 
 #define BAR_LENGTH 256
 #define SIGWRITE SIGUSR1
-#define COUNT(X) ((sizeof((X))) / sizeof((X)[0]))
 
 typedef __sighandler_t sighandler_t;
 typedef void (*MainLoop)(int signum);
@@ -26,7 +25,7 @@ void time_loop(int signum) {
 }
 
 void time_handler(int signum) {
-	strcpy(time_str, "arfcae");
+	strcpy(time_str, "some test text");
 	raise(SIGWRITE);
 	return;
 }

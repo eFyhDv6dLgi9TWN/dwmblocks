@@ -10,7 +10,7 @@
 #include "config.h"
 
 #define SIGSTOPTHRD SIGUSR2
-
+#define COUNT(X) ((sizeof((X))) / sizeof((X)[0]))
 
 static pthread_t threads[COUNT(blocks)];
 static pthread_t control_thread;
@@ -81,7 +81,6 @@ void *block_thrd_func(void *arg) {
 void (*write_status)(int signum) = setroot;
 
 int main (int argc, char *argv[]) {
-	printf("SIGRTMIN: %d", SIGRTMIN);
 	for (int i = 0; i < argc; i++)
 		if (!strcmp(argv[i], "-p"))
 			write_status = pstdout;
@@ -91,8 +90,6 @@ int main (int argc, char *argv[]) {
 					block_thrd_func, (void *) (blocks+i))
 				!= 0) {
 			printf("Fail to create the thread No. %d.\n", i);
-			// This signal can be sent before other child signals 
-			// block them; need to fix.
 			raise(SIGABRT);
 		}
 		++thread_count;
