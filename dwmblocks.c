@@ -86,7 +86,9 @@ int main (int argc, char *argv[]) {
 			write_status = pstdout;
 
 	for (int i = 0; i < COUNT(blocks); i++) {
-		if (pthread_create(threads+i, NULL, 
+		if (
+				blocks[i].main_loop != NULL &&
+				pthread_create(threads+i, NULL, 
 					block_thrd_func, (void *) (blocks+i))
 				!= 0) {
 			printf("Fail to create the thread No. %d.\n", i);

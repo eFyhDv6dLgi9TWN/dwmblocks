@@ -46,6 +46,7 @@ typedef struct {
 	char *str;
 
 	// The main loop function.
+	// Note when this is NULL, the last three attribute will be ignored, but str is still going to be shown.
 	MainLoop main_loop;
 
 	// The signal to trigger the block.
