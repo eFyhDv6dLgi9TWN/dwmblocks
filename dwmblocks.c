@@ -25,8 +25,9 @@ int get_status()
     for(int i = 0; i < COUNT(blocks); i++) {
 		strcat(status_str[0], " ");
 		strcat(status_str[0], blocks[i].str);
+		strcat(status_str[0], " ");
         if (i != COUNT(blocks) - 1)
-            strcat(status_str[0], " |");
+            strcat(status_str[0], "|");
     }
 	return strcmp(status_str[0], status_str[1]);
 }
