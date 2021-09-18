@@ -86,6 +86,17 @@ int main (int argc, char *argv[]) {
 		if (!strcmp(argv[i], "-p"))
 			write_status = pstdout;
 
+	// Print pid into /tmp/dwmblocks-pid.
+	pid_t pid = getpid();
+	FILE *tmp = fopen("/tmp/dwmblocks-pid", "w");
+	if (tmp == NULL) {
+		printf("Cannot open a temp file to store pid.\n");
+		raise(SIGABRT);
+		pause();
+	}
+	fprintf(tmp, "%d", (int) pid);
+	fclose(tmp);
+
 	for (int i = 0; i < COUNT(blocks); i++) {
 		if (
 				blocks[i].main_loop != NULL &&
@@ -99,5 +110,6 @@ int main (int argc, char *argv[]) {
 	}
 
 	signal(SIGWRITE, write_status);
-	pause();
+	while (true) // Not to exit when receiving external signals.
+		pause();
 }
