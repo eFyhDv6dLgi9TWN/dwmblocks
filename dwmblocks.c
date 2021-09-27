@@ -88,14 +88,21 @@ int main (int argc, char *argv[]) {
 
 	// Print pid into /tmp/dwmblocks-pid.
 	pid_t pid = getpid();
-	FILE *tmp = fopen("/tmp/dwmblocks-pid", "w");
-	if (tmp == NULL) {
+	char pid_filename[256];
+	FILE *pid_file;
+	if (sprintf(pid_filename, "/run/user/%u/dwmblocks.pid", getuid()) < 0) {
+		printf("Cannot get pid file name.\n");
+		raise(SIGABRT);
+		pause();
+	}
+	pid_file = fopen(pid_filename, "w");
+	if (pid_file == NULL) {
 		printf("Cannot open a temp file to store pid.\n");
 		raise(SIGABRT);
 		pause();
 	}
-	fprintf(tmp, "%d", (int) pid);
-	fclose(tmp);
+	fprintf(pid_file, "%d", (int) pid);
+	fclose(pid_file);
 
 	for (int i = 0; i < COUNT(blocks); i++) {
 		if (
