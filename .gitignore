@@ -1,0 +1,7 @@
+# Binary files.
+*.o
+*.a
+dwmblocks
+
+# Config file.
+config.h
