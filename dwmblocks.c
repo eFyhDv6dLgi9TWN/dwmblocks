@@ -107,7 +107,7 @@ static inline void setup() {
 		exit(EXIT_FAILURE);
 	}
 	for (int i = 0; i < COUNT(blocks); i++) {
-		if (!pBlock->main_loop) break;
+		if (!pBlock->main_loop) continue;
 		if (signal(pBlock->signum, pBlock->handler) == SIG_ERR) {
 			perror("signal");
 			exit(EXIT_FAILURE);
