@@ -26,7 +26,7 @@ static inline void *bat_loop(int signum) {
 		raise(signum);
 		sleep(1);
 		while (bat_level < BATWARN &&
-				strcmp(bat_status, "Charging")) {
+				strcmp(bat_status, "Charging\n")) {
 			raise(signum);
 			usleep(FLASH_RATE);
 			*bat_str = '\0';
@@ -48,7 +48,8 @@ static inline void bat_handler(int signum) {
 
 	bat_level = atoll(charge_now) * 100 / atoll(charge_full_design);
 	color_char = '\x03' + (bat_level - 1) / 10;
-	if (!strcmp(bat_status, "Charging") || !strcmp(bat_status, "Full"))
+	if (!strcmp(bat_status, "Charging\n") || 
+			!strcmp(bat_status, "Full\n"))
 		status_emoji = "🔌";
 	else
 		status_emoji = "🔋";
