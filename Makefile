@@ -5,7 +5,7 @@ dwmblocks: dwmblocks.o
 	${CC} -o $@ -lpthread `pkgconf x11 --cflags --libs` $^
 	chmod 755 $@
 dwmblocks.o: dwmblocks.c config.h
-	${CC} -c $<
+	${CC} -c -O3 $<
 config.h:
 	cp config.def.h $@
 

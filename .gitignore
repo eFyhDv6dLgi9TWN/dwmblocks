@@ -1,6 +1,8 @@
 # Binary files.
 *.o
 dwmblocks
+*.zst
 
-# Config file.
-config.h
+# PKGBUILD
+src/
+pkg/
