@@ -107,11 +107,11 @@ static inline void setup() {
 		exit(EXIT_FAILURE);
 	}
 	for (int i = 0; i < COUNT(blocks); i++) {
-		if (!pBlock->main_loop) continue;
 		if (signal(pBlock->signum, pBlock->handler) == SIG_ERR) {
 			perror("signal");
 			exit(EXIT_FAILURE);
 		}
+		if (!pBlock->main_loop) continue;
 		err = pthread_create(&thread_id, NULL, thread_routine, 
 				(void *) pBlock);
 		if (err) {
