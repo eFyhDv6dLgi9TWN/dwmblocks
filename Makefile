@@ -2,12 +2,12 @@ PREFIX = /usr/local
 CC = gcc
 
 dwmblocks: dwmblocks.o
-	${CC} $^ -lX11 -lpthread -o $@
+	${CC} -o $@ -lpthread `pkgconf x11 --cflags --libs` $^
 	chmod 755 $@
-dwmblocks.o: dwmblocks.c dwmblocks.h config.h
+dwmblocks.o: dwmblocks.c config.h
 	${CC} -c $<
-config.h: config.def.h
-	cp $^ $@
+config.h:
+	cp config.def.h $@
 
 all: dwmblocks
 clean:
