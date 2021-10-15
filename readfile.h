@@ -24,6 +24,7 @@ static inline void readfile(const char *path, char *buf) {
 		if (size < STRLEN) break;
 		buf += STRLEN;
 	}
+	buf[size+1] = '\0';
 
 	return;
 }
