@@ -1,19 +1,21 @@
-.POSIX:
-
 PREFIX = /usr/local
 CC = gcc
 
 dwmblocks: dwmblocks.o
-	$(CC) dwmblocks.o -lX11 -lpthread -o dwmblocks
-dwmblocks.o: dwmblocks.c config.h
-	$(CC) -c dwmblocks.c
-clean:
-	rm -f *.o *.gch dwmblocks
-install: dwmblocks
-	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp -f dwmblocks $(DESTDIR)$(PREFIX)/bin
-	chmod 755 $(DESTDIR)$(PREFIX)/bin/dwmblocks
-uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/dwmblocks
+	${CC} $^ -lX11 -lpthread -o $@
+	chmod 755 $@
+dwmblocks.o: dwmblocks.c dwmblocks.h config.h
+	${CC} -c $<
+config.h: config.def.h
+	cp $^ $@
 
-.PHONY: clean install uninstall
+all: dwmblocks
+clean:
+	rm -f *.o dwmblocks
+install: dwmblocks
+	mkdir -p ${PREFIX}/bin
+	cp -f $^ ${PREFIX}/bin
+uninstall:
+	rm -f ${PREFIX}/bin/dwmblocks
+
+.PHONY: all clean install uninstall

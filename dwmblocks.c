@@ -1,49 +1,32 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <signal.h>
-#include <pthread.h>
-#include <X11/Xlib.h>
-
+#include "dwmblocks.h"
 #include "config.h"
 
-#define SIGSTOPTHRD SIGUSR2
-#define COUNT(X) ((sizeof((X))) / sizeof((X)[0]))
 
-static pthread_t threads[COUNT(blocks)];
-static pthread_t control_thread;
-static int thread_count = 0;
 static char status_str[2][BAR_LENGTH];
 
 
-int get_status()
+static inline int get_status()
 {
 	strcpy(status_str[1], status_str[0]);
 	status_str[0][0] = '\0';
-    for(int i = 0; i < COUNT(blocks); i++) {
+	for(int i = 0; i < COUNT(blocks); i++) {
 		strcat(status_str[0], " ");
 		strcat(status_str[0], blocks[i].str);
 		strcat(status_str[0], " ");
         if (i != COUNT(blocks) - 1)
-            strcat(status_str[0], "|");
-    }
+		strcat(status_str[0], "|");
+	}
 	return strcmp(status_str[0], status_str[1]);
 }
 
 // Signal Handlers
-void stop_thread(int signum) {
-	pthread_exit(NULL);
-}
-
-void setroot(int signum)
+static inline void setroot(int signum)
 {
 	static Display *display;
 	int screen;
 	Window root;
 
-	if (get_status() == 0)
+	if (get_status() == 0)  // Only write out if text has changed.
 		return;
 
 	Display *d = XOpenDisplay(NULL);
@@ -58,65 +41,94 @@ void setroot(int signum)
 	return;
 }
 
-void pstdout(int signum)
+static inline void pstdout(int signum)
 {
-	fflush(stdout);
-	if (get_status() == 0)//Only write out if text has changed.
+	if (get_status() == 0)
 		return;
 
-	printf("%s\n",status_str[0]);
+	puts(status_str[0]);
 	fflush(stdout);
 	return;
 }
 
 // Thread Function
-void *block_thrd_func(void *arg) {
+static inline void *thread_routine(void *arg) {
 	Block *block = (Block *) arg;
 
-	signal(block->signum, block->handler);
-
-	(*(block->main_loop))(block->signum);
-	return NULL;
+	return (*(block->main_loop))(block->signum);
 }
 
-void (*write_status)(int signum) = setroot;
-
-int main (int argc, char *argv[]) {
-	for (int i = 0; i < argc; i++)
-		if (!strcmp(argv[i], "-p"))
-			write_status = pstdout;
-
-	// Print pid into /tmp/dwmblocks-pid.
-	pid_t pid = getpid();
-	char pid_filename[256];
+// Static Functions
+static inline void write_pid() {
+	int err;
+	char *runtime_dir;
+	char pid_filename[PATH_LEN];
 	FILE *pid_file;
-	if (sprintf(pid_filename, "/run/user/%u/dwmblocks.pid", getuid()) < 0) {
-		printf("Cannot get pid file name.\n");
-		raise(SIGABRT);
-		pause();
+
+	// Prepare the pid file name.
+	runtime_dir = getenv("XDG_RUNTIME_DIR");
+	if (!runtime_dir) {
+		err = sprintf(pid_filename, "/run/user/%d/dwmblocks.pid",
+				getuid());
+		if (err < 0) {
+			perror("sprintf");
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		strcpy(pid_filename, runtime_dir);
+		strcat(pid_filename, "/dwmblocks.pid");
 	}
+
+	// Write the pid.
 	pid_file = fopen(pid_filename, "w");
 	if (pid_file == NULL) {
-		printf("Cannot open a temp file to store pid.\n");
-		raise(SIGABRT);
-		pause();
+		perror("fopen");
+		exit(EXIT_FAILURE);
 	}
-	fprintf(pid_file, "%d", (int) pid);
-	fclose(pid_file);
+	err = fprintf(pid_file, "%d", getpid());
+	if (err < 0) {
+		perror("fprintf");
+		exit(EXIT_FAILURE);
+	}
+	err = fclose(pid_file);
+	if (err) {
+		perror("fclose");
+		exit(EXIT_FAILURE);
+	}
+}
 
+static inline void setup() {
+	int err;
+	pthread_t thread_id;
+	Block *pBlock = blocks;
+
+	if (signal(SIGWRITE, write_status) == SIG_ERR) {
+		perror("signal");
+		exit(EXIT_FAILURE);
+	}
 	for (int i = 0; i < COUNT(blocks); i++) {
-		if (
-				blocks[i].main_loop != NULL &&
-				pthread_create(threads+i, NULL, 
-					block_thrd_func, (void *) (blocks+i))
-				!= 0) {
-			printf("Fail to create the thread No. %d.\n", i);
-			raise(SIGABRT);
+		if (!pBlock->main_loop) break;
+		if (signal(pBlock->signum, pBlock->handler) == SIG_ERR) {
+			perror("signal");
+			exit(EXIT_FAILURE);
 		}
-		++thread_count;
+		err = pthread_create(&thread_id, NULL, thread_routine, 
+				(void *) pBlock);
+		if (err) {
+			pferror("pthread_create", "Error.");
+			exit(EXIT_FAILURE);
+		}
+		++pBlock;
 	}
+}
 
-	signal(SIGWRITE, write_status);
-	while (true) // Not to exit when receiving external signals.
-		pause();
+// Main
+int main (int argc, char *argv[]) {
+	write_status = setroot;
+	for (int i = 0; i < argc; i++)
+		if (!strcmp(argv[i], "-p")) write_status = pstdout;
+
+	write_pid();
+	setup();
+	while (true) pause();  // Receiving signals.
 }
