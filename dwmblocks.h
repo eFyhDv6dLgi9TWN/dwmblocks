@@ -12,7 +12,6 @@
 #include <X11/Xlib.h>
 
 #define SIGWRITE SIGUSR1
-#define COUNT(X) ((sizeof((X))) / sizeof((X)[0]))
 #define pferror(f, msg) fprintf(stderr, "%s: %s\n", f, msg)
 
 typedef __sighandler_t sighandler_t;
@@ -22,8 +21,6 @@ typedef struct {
 	int signum;
 	sighandler_t handler;
 } Block;
-
-static void (*write_status)();
 
 
 #endif

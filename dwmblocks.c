@@ -3,24 +3,25 @@
 
 
 static char status_str[2][BAR_LENGTH];
+static void (*write_status)();
 
 
-static inline int get_status()
+static int get_status()
 {
 	strcpy(status_str[1], status_str[0]);
 	status_str[0][0] = '\0';
-	for(int i = 0; i < COUNT(blocks); i++) {
+	for(int i = 0; i < block_count; i++) {
 		strcat(status_str[0], " ");
 		strcat(status_str[0], blocks[i].str);
 		strcat(status_str[0], " ");
-        if (i != COUNT(blocks) - 1)
+        if (i != block_count - 1)
 		strcat(status_str[0], "|");
 	}
 	return strcmp(status_str[0], status_str[1]);
 }
 
 // Signal Handlers
-static inline void setroot(int signum)
+static void setroot(int signum)
 {
 	static Display *display;
 	int screen;
@@ -41,7 +42,7 @@ static inline void setroot(int signum)
 	return;
 }
 
-static inline void pstdout(int signum)
+static void pstdout(int signum)
 {
 	if (get_status() == 0)
 		return;
@@ -52,14 +53,16 @@ static inline void pstdout(int signum)
 }
 
 // Thread Function
-static inline void *thread_routine(void *arg) {
+static void *thread_routine(void *arg)
+{
 	Block *block = (Block *) arg;
 
 	return (*(block->main_loop))(block->signum);
 }
 
-// Static Functions
-static inline void write_pid() {
+// Other Static Inline Functions
+static void write_pid() 
+{
 	int err;
 	char *runtime_dir;
 	char pid_filename[PATH_LEN];
@@ -97,7 +100,8 @@ static inline void write_pid() {
 	}
 }
 
-static inline void setup() {
+static void setup() 
+{
 	int err;
 	pthread_t thread_id;
 	Block *pBlock = blocks;
@@ -106,7 +110,7 @@ static inline void setup() {
 		perror("signal");
 		exit(EXIT_FAILURE);
 	}
-	for (int i = 0; i < COUNT(blocks); i++) {
+	for (int i = 0; i < block_count; i++) {
 		if (signal(pBlock->signum, pBlock->handler) == SIG_ERR) {
 			perror("signal");
 			exit(EXIT_FAILURE);
@@ -123,7 +127,8 @@ static inline void setup() {
 }
 
 // Main
-int main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) 
+{
 	write_status = setroot;
 	for (int i = 0; i < argc; i++)
 		if (!strcmp(argv[i], "-p")) write_status = pstdout;
