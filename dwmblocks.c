@@ -1,3 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <signal.h>
+#include <pthread.h>
+#include <X11/Xlib.h>
 #include "dwmblocks.h"
 #include "config.h"
 
