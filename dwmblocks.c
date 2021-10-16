@@ -1,3 +1,7 @@
+/*
+ * Edited: Yushun Cheng, from 2021-09-15 +0800.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
