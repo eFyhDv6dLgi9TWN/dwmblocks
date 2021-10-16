@@ -2,14 +2,7 @@
 #define DWMBLOCKS_H 1
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <signal.h>
-#include <pthread.h>
-#include <X11/Xlib.h>
 
 #define SIGWRITE SIGUSR1
 #define pferror(f, msg) fprintf(stderr, "%s: %s\n", f, msg)
