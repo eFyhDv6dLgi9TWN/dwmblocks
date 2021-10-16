@@ -1,3 +1,7 @@
+/*
+ * Edited: Yushun Cheng, from 2021-09-15 +0800.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -83,7 +87,7 @@ static void write_pid()
 				getuid());
 		if (err < 0) {
 			perror("sprintf");
-			exit(EXIT_FAILURE);
+			goto exit_fail;
 		}
 	} else {
 		strcpy(pid_filename, runtime_dir);
@@ -94,18 +98,21 @@ static void write_pid()
 	pid_file = fopen(pid_filename, "w");
 	if (pid_file == NULL) {
 		perror("fopen");
-		exit(EXIT_FAILURE);
+		goto exit_fail;
 	}
 	err = fprintf(pid_file, "%d", getpid());
 	if (err < 0) {
 		perror("fprintf");
-		exit(EXIT_FAILURE);
+		goto exit_fail;
 	}
 	err = fclose(pid_file);
 	if (err) {
 		perror("fclose");
-		exit(EXIT_FAILURE);
+		goto exit_fail;
 	}
+
+exit_fail:
+	exit(EXIT_FAILURE);
 }
 
 static void setup() 
@@ -116,22 +123,25 @@ static void setup()
 
 	if (signal(SIGWRITE, write_status) == SIG_ERR) {
 		perror("signal");
-		exit(EXIT_FAILURE);
+		goto exit_fail;
 	}
 	for (int i = 0; i < block_count; i++) {
 		if (signal(pBlock->signum, pBlock->handler) == SIG_ERR) {
 			perror("signal");
-			exit(EXIT_FAILURE);
+			goto exit_fail;
 		}
 		if (!pBlock->main_loop) continue;
 		err = pthread_create(&thread_id, NULL, thread_routine, 
 				(void *) pBlock);
 		if (err) {
 			pferror("pthread_create", "Error.");
-			exit(EXIT_FAILURE);
+			goto exit_fail;
 		}
 		++pBlock;
 	}
+
+exit_fail:
+	exit(EXIT_FAILURE);
 }
 
 // Main
