@@ -2,5 +2,6 @@
 *.o
 dwmblocks
 
-# Config file.
+# Config files.
 config.h
+config.c
