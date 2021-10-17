@@ -1,6 +1,6 @@
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = `pkgconf x11 --cflags`
+CFLAGS = -Wall `pkgconf x11 --cflags`
 
 dwmblocks: dwmblocks.o config.o
 	${CC} -o $@ -lpthread `pkgconf x11 --libs` $^
