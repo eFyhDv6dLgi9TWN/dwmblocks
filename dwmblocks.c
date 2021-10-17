@@ -111,6 +111,8 @@ static void write_pid()
 		goto exit_fail;
 	}
 
+	return;
+
 exit_fail:
 	exit(EXIT_FAILURE);
 }
@@ -139,6 +141,8 @@ static void setup()
 		}
 		++pBlock;
 	}
+
+	return;
 
 exit_fail:
 	exit(EXIT_FAILURE);

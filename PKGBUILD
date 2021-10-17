@@ -1,5 +1,5 @@
 pkgname=dwmblocks
-pkgver=0.5.r4.g60e49dc
+pkgver=0.5.r5.g5856875
 pkgrel=1
 arch=('x86_64')
 url="https://github.com/eFyhDv6dLgi9TWN/dwmblocks"
