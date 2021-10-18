@@ -1,26 +1,27 @@
 #include <stdio.h>
-#include <unistd.h>
 #include <stdbool.h>
+#include <stdnoreturn.h>
+#include <unistd.h>
 #include <time.h>
 #include "dwmblocks.h"
 #include "config.h"
 
-char time_str[16];
+static char time_str[16];
 
-void *time_loop(int);
-void time_handler(int);
+static void *time_loop(int);
+static void time_handler(int);
 
 Block blocks[] = {
 	/* string,   main loop, signum, signal handler. */
 	{  time_str, time_loop, 40,     time_handler },
 };
-int block_count = sizeof(blocks) / sizeof(blocks[0]);
+const int block_count = sizeof(blocks) / sizeof(blocks[0]);
 
 
 static time_t time_buffer;
 static struct tm *time_buffer_h;
 
-void *time_loop(int signum)
+static noreturn void *time_loop(int signum)
 {
 	while (true) {
 		raise(signum);
@@ -28,7 +29,7 @@ void *time_loop(int signum)
 	}
 }
 
-void time_handler(int signum)
+static void time_handler(int signum)
 {
 	time(&time_buffer);
 	time_buffer_h = localtime(&time_buffer);

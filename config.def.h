@@ -9,7 +9,7 @@
 // The total maximum length of the bar.
 #define BAR_LENGTH 256
 
-extern int block_count;
+extern const int block_count;
 extern Block blocks[];
 
 
