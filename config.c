@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdnoreturn.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
@@ -19,24 +20,24 @@
 #define BRIGHT_MAX 255
 
 /* GLOBAL VARIABLES */
-char time_str[STRLEN];
-char date_str[STRLEN];
-char bat_str[STRLEN];
-char bright_str[STRLEN];
-char audio_str[STRLEN];
+static char time_str[STRLEN];
+static char date_str[STRLEN];
+static char bat_str[STRLEN];
+static char bright_str[STRLEN];
+static char audio_str[STRLEN];
 
 /* GLOBAL FUNCTIONS */
 /* Main Loops */
-void *time_loop(int);
-void *bat_loop(int);
-void *bright_loop(int);
-void *audio_loop(int);
+static void *time_loop(int);
+static void *bat_loop(int);
+static void *bright_loop(int);
+static void *audio_loop(int);
 /* Signal Handlers */
-void date_handler(int);
-void time_handler(int);
-void bat_handler(int);
-void bright_handler(int);
-void audio_handler(int);
+static void date_handler(int);
+static void time_handler(int);
+static void bat_handler(int);
+static void bright_handler(int);
+static void audio_handler(int);
 
 Block blocks[] = {
 	{ audio_str,  audio_loop,  38, audio_handler  },
@@ -45,10 +46,11 @@ Block blocks[] = {
 	{ time_str,   time_loop,   35, time_handler   },
 	{ date_str,   NULL,        36, date_handler   },
 };
-int block_count = sizeof(blocks) / sizeof(blocks[0]);
+const int block_count = sizeof(blocks) / sizeof(blocks[0]);
 
 /* STATIC FUNCTIONS */
-static void readfile(const char *path, char *buf) {
+static void readfile(const char *path, char *buf)
+{
 	size_t size;
 	FILE *stream;
 
@@ -75,7 +77,8 @@ static const char wdays[7][4] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
 };
 
-void *time_loop(int signum) {
+static noreturn void *time_loop(int signum)
+{
 	while (true) {
 		raise(signum);
 		sleep(1);
@@ -83,7 +86,8 @@ void *time_loop(int signum) {
 	}
 }
 
-void time_handler(int signum) {
+static void time_handler(int signum)
+{
 	time(&time_int);
 	time_struct = localtime(&time_int);
 	sprintf(time_str, "🕒 %02d:%02d", 
@@ -93,7 +97,8 @@ void time_handler(int signum) {
 	return;
 }
 
-void date_handler(int signum) {
+static void date_handler(int signum)
+{
 	sprintf(date_str, "📅 %04d-%02d-%02d %s",
 			time_struct->tm_year+1900,
 			time_struct->tm_mon+1,
@@ -107,7 +112,8 @@ void date_handler(int signum) {
 static long long bat_level;
 static char bat_status[STRLEN];
 
-void *bat_loop(int signum) {
+static noreturn void *bat_loop(int signum)
+{
 	while (true) {
 		raise(signum);
 		sleep(1);
@@ -122,7 +128,8 @@ void *bat_loop(int signum) {
 	}
 }
 
-void bat_handler(int signum) {
+static void bat_handler(int signum)
+{
 	static char charge_now[STRLEN];
 	static char charge_full_design[STRLEN];
 	static const char *status_emoji;
@@ -147,12 +154,14 @@ void bat_handler(int signum) {
 }
 
 /* BRIGHTNESS */
-void *bright_loop(int signum) {
+static void *bright_loop(int signum)
+{
 	raise(signum);
 	return NULL;
 }
 
-void bright_handler(int signum) {
+static void bright_handler(int signum)
+{
 	static char brt[STRLEN];
 
 	readfile(BRIGHT_PATH, brt);
@@ -162,14 +171,16 @@ void bright_handler(int signum) {
 }
 
 /* AUDIO LEVEL */
-void *audio_loop(int signum) {
+static void *audio_loop(int signum)
+{
 	raise(signum);
 	return NULL;
 }
 
-void audio_handler(int signum) {
+static void audio_handler(int signum)
+{
 	static int level;
-	static FILE *stream;
+	FILE *stream;
 
 	stream = popen("amixer -c 1 cget numid=12 |"
 			"grep \": values\"", "r");

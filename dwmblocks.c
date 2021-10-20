@@ -32,11 +32,9 @@ static int get_status()
 	strcpy(status_str[1], status_str[0]);
 	status_str[0][0] = '\0';
 	for(int i = 0; i < block_count; i++) {
-		strcat(status_str[0], " ");
+		strcat(status_str[0], "| ");
 		strcat(status_str[0], blocks[i].str);
 		strcat(status_str[0], " ");
-        if (i != block_count - 1)
-		strcat(status_str[0], "|");
 	}
 	return strcmp(status_str[0], status_str[1]);
 }
