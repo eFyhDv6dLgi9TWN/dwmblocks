@@ -15,6 +15,15 @@
 
 
 static char status_str[2][BAR_LENGTH];
+// X related.
+static Display *display = NULL;
+static int screen;
+static Window root;
+// Signals.
+static const int sigterm[] = {
+	SIGHUP, SIGINT, SIGTERM
+};
+
 static void (*write_status)();
 
 
@@ -33,23 +42,19 @@ static int get_status()
 }
 
 // Signal Handlers
+static void termhandler(int signum) {
+	if (display) XCloseDisplay(display);
+	exit(128 + signum);
+	return;
+}
+
 static void setroot(int signum)
 {
-	static Display *display;
-	int screen;
-	Window root;
-
 	if (get_status() == 0)  // Only write out if text has changed.
 		return;
 
-	Display *d = XOpenDisplay(NULL);
-	if (d)
-		display = d;
-
-	screen = DefaultScreen(display);
-	root = RootWindow(display, screen);
 	XStoreName(display, root, status_str[0]);
-	XCloseDisplay(display);
+	XFlush(display);
 
 	return;
 }
@@ -72,7 +77,28 @@ static void *thread_routine(void *arg)
 	return (*(block->main_loop))(block->signum);
 }
 
-// Other Static Inline Functions
+// Other Static Functions
+static void exit_fail() {
+	if (display) XCloseDisplay(display);
+	exit(EXIT_FAILURE);
+}
+
+static void setup_x() {
+	display = XOpenDisplay(NULL);
+	if (!display) {
+		pferror("XOpenDisplay", "Error.");
+		goto exit_fail;
+	}
+
+	screen = DefaultScreen(display);
+	root = RootWindow(display, screen);
+
+	return;
+
+exit_fail:
+	exit_fail();
+}
+
 static void write_pid() 
 {
 	int err;
@@ -114,7 +140,14 @@ static void write_pid()
 	return;
 
 exit_fail:
-	exit(EXIT_FAILURE);
+	exit_fail();
+}
+
+static void setup_signal(int signum, sighandler_t handler) {
+	if (signal(signum, handler) == SIG_ERR) {
+		perror("signal");
+		exit_fail();
+	}
 }
 
 static void setup() 
@@ -123,16 +156,12 @@ static void setup()
 	pthread_t thread_id;
 	Block *pBlock = blocks;
 
-	if (signal(SIGWRITE, write_status) == SIG_ERR) {
-		perror("signal");
-		goto exit_fail;
-	}
+	for (int i = 0; i < sizeof(sigterm) / sizeof(sigterm[0]); i++)
+		setup_signal(sigterm[i], termhandler);
+	setup_signal(SIGWRITE, write_status);
 	for (int i = 0; i < block_count; i++) {
-		if (signal(pBlock->signum, pBlock->handler) == SIG_ERR) {
-			perror("signal");
-			goto exit_fail;
-		}
-		if (!pBlock->main_loop) continue;
+		setup_signal(pBlock->signum, pBlock->handler);
+		if (!pBlock->main_loop) continue;  // Skip NULL loops.
 		err = pthread_create(&thread_id, NULL, thread_routine, 
 				(void *) pBlock);
 		if (err) {
@@ -145,15 +174,21 @@ static void setup()
 	return;
 
 exit_fail:
-	exit(EXIT_FAILURE);
+	exit_fail();
 }
 
 // Main
 int main (int argc, char *argv[]) 
 {
+	setup_x();
+
 	write_status = setroot;
 	for (int i = 0; i < argc; i++)
-		if (!strcmp(argv[i], "-p")) write_status = pstdout;
+		if (!strcmp(argv[i], "-p")) {
+			write_status = pstdout;
+			XCloseDisplay(display);
+			display = NULL;
+		}
 
 	write_pid();
 	setup();
