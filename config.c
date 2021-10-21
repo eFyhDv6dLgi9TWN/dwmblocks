@@ -66,6 +66,7 @@ static void readfile(const char *path, char *buf)
 		buf += STRLEN;
 	}
 	buf[size] = '\0';
+	fclose(stream);
 
 	return;
 }
