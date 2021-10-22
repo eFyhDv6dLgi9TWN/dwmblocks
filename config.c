@@ -18,6 +18,14 @@
 /* Brightness */
 #define BRIGHT_PATH "/sys/class/backlight/amdgpu_bl0/brightness"
 #define BRIGHT_MAX 255
+/* Temperature */
+#define TEMP_COUNT 7
+#define TEMP_PATH "/sys/class/thermal/thermal_zone%d/temp"
+#define TEMP_MIN 25
+#define TEMP_MAX 120
+/* Function-like */
+#define max(x, y) ((x) > (y) ? (x) : (y))
+#define min(x, y) ((x) < (y) ? (x) : (y))
 
 /* GLOBAL VARIABLES */
 static char time_str[STRLEN];
@@ -26,6 +34,7 @@ static char bat_str[STRLEN];
 static char bright_str[STRLEN];
 static char audio_str[STRLEN];
 static char wifi_str[STRLEN];
+static char temp_str[STRLEN];
 
 /* GLOBAL FUNCTIONS */
 /* Main Loops */
@@ -34,6 +43,7 @@ static void *bat_loop(int);
 static void *bright_loop(int);
 static void *audio_loop(int);
 static void *wifi_loop(int);
+static void *temp_loop(int);
 /* Signal Handlers */
 static void date_handler(int);
 static void time_handler(int);
@@ -41,8 +51,10 @@ static void bat_handler(int);
 static void bright_handler(int);
 static void audio_handler(int);
 static void wifi_handler(int);
+static void temp_handler(int);
 
 Block blocks[] = {
+	{ temp_str,   temp_loop,   40, temp_handler   },
 	{ wifi_str,   wifi_loop,   37, wifi_handler   },
 	{ audio_str,  audio_loop,  38, audio_handler  },
 	{ bright_str, bright_loop, 39, bright_handler },
@@ -230,4 +242,31 @@ write:
 	pclose(stream);
 	sprintf(wifi_str, "📶 %s", s);
 	raise(SIGWRITE);
+}
+
+/* TEMPERATURE */
+static noreturn void *temp_loop(int signum)
+{
+	while (true) {
+		raise(signum);
+		sleep(4);
+	}
+}
+
+static void temp_handler(int signum) {
+	int t, t_max = -273;
+	static char color, buf[STRLEN], path[PATH_LEN];
+
+	for (int i = 0; i < TEMP_COUNT; i++) {
+		sprintf(path, TEMP_PATH, i);
+		readfile(path, buf);
+		t = atoi(buf) / 1000;
+		t_max = max(t_max, t);
+	}
+
+	color = (TEMP_MAX - t_max) * 10 / (TEMP_MAX - TEMP_MIN) + '\x03';
+	if      (color < '\x03') color = '\x03';
+	else if (color > '\x12') color = '\x12';
+	sprintf(temp_str, "%c\xf0\x9f\x8c\xa1 %d\xe2\x84\x83\x01",
+		color, t_max);
 }
