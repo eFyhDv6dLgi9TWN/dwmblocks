@@ -249,7 +249,7 @@ static noreturn void *temp_loop(int signum)
 {
 	while (true) {
 		raise(signum);
-		sleep(4);
+		sleep(2);
 	}
 }
 
