@@ -1,6 +1,6 @@
 pkgname=dwmblocks
 pkgver=0.6.r1.g540b5ab
-pkgrel=3
+pkgrel=4
 arch=('x86_64')
 url="https://github.com/eFyhDv6dLgi9TWN/dwmblocks"
 license=('GPL2')

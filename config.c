@@ -25,6 +25,7 @@ static char date_str[STRLEN];
 static char bat_str[STRLEN];
 static char bright_str[STRLEN];
 static char audio_str[STRLEN];
+static char wifi_str[STRLEN];
 
 /* GLOBAL FUNCTIONS */
 /* Main Loops */
@@ -32,14 +33,17 @@ static void *time_loop(int);
 static void *bat_loop(int);
 static void *bright_loop(int);
 static void *audio_loop(int);
+static void *wifi_loop(int);
 /* Signal Handlers */
 static void date_handler(int);
 static void time_handler(int);
 static void bat_handler(int);
 static void bright_handler(int);
 static void audio_handler(int);
+static void wifi_handler(int);
 
 Block blocks[] = {
+	{ wifi_str,   wifi_loop,   37, wifi_handler   },
 	{ audio_str,  audio_loop,  38, audio_handler  },
 	{ bright_str, bright_loop, 39, bright_handler },
 	{ bat_str,    bat_loop,    34, bat_handler    },
@@ -67,8 +71,6 @@ static void readfile(const char *path, char *buf)
 	}
 	buf[size] = '\0';
 	fclose(stream);
-
-	return;
 }
 
 /* TIME & DATE */
@@ -95,7 +97,6 @@ static void time_handler(int signum)
 			time_struct->tm_hour,
 			time_struct->tm_min);
 	raise(signum + 1);
-	return;
 }
 
 static void date_handler(int signum)
@@ -106,7 +107,6 @@ static void date_handler(int signum)
 			time_struct->tm_mday,
 			wdays[time_struct->tm_wday]);
 	raise(SIGWRITE);
-	return;
 }
 
 /* BATTERY */
@@ -151,7 +151,6 @@ static void bat_handler(int signum)
 	sprintf(bat_str, "%c%s %lli%%\x01", color_char, status_emoji,
 			bat_level);
 	raise(SIGWRITE);
-	return;
 }
 
 /* BRIGHTNESS */
@@ -168,7 +167,6 @@ static void bright_handler(int signum)
 	readfile(BRIGHT_PATH, brt);
 	sprintf(bright_str, "💡 %d%%", atoi(brt)*100/BRIGHT_MAX);
 	raise(SIGWRITE);
-	return;
 }
 
 /* AUDIO LEVEL */
@@ -190,5 +188,46 @@ static void audio_handler(int signum)
 
 	sprintf(audio_str, "🔈 -%d dB", 74 - level);
 	raise(SIGWRITE);
-	return;
+}
+
+/* WIFI */
+static noreturn void *wifi_loop(int signum)
+{
+	while (true) {
+		raise(signum);
+		sleep(5);
+	}
+}
+
+static void wifi_handler(int signum)
+{
+	static char c, s[STRLEN];
+	size_t size;
+	FILE *stream;
+
+	stream = popen("netctl-auto list", "r");
+	while (true) {
+		/* read line */
+		size = fread(&c, 1, 1, stream);
+		if (!size) goto no_connection;
+		if (c == '*') {
+			fread(&c, 1, 1, stream);
+			/* read the connected wifi name */
+			for (int i = 0; i < STRLEN - 1; i++) {
+				if (!fread(s + i, 1, 1, stream) ||
+				    s[i] == '\n') {
+					s[i] = '\0';
+					goto write;
+				}
+			}
+		} else do if (!fread(&c, 1, 1, stream)) goto no_connection;
+		       while (c != '\n'); /* skip the line */
+	}
+
+no_connection:
+	memcpy(s, "-", 2);
+write:
+	pclose(stream);
+	sprintf(wifi_str, "📶 %s", s);
+	raise(SIGWRITE);
 }
