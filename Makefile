@@ -2,6 +2,7 @@ PREFIX = /usr/local
 CC = gcc
 CFLAGS = -Wall `pkgconf x11 --cflags` -O3
 
+all: dwmblocks
 dwmblocks: dwmblocks.o config.o
 	${CC} -o $@ -lpthread `pkgconf x11 --libs` $^
 	chmod 755 $@
@@ -14,7 +15,6 @@ config.c: config.def.c
 config.h: config.def.h
 	cp $< $@
 
-all: dwmblocks
 clean:
 	rm -f *.o dwmblocks
 install: dwmblocks
